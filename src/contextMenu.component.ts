@@ -1,19 +1,40 @@
 import {Component, HostListener} from '@angular/core';
 import {ContextMenuService, IContextMenuClickEvent} from './contextMenu.service';
+import {ContextSubMenuComponent} from './contextSubMenu.component';
 
 @Component({
   selector: 'context-menu',
-  styles: [
-  ],
   template:
   `<div class="dropdown angular2-contextmenu">
       <ul [ngStyle]="locationCss" class="dropdown-menu">
-        <li *ngFor="let link of links" [class.disabled]="link.enabled && !link.enabled(item)">
-          <a href (click)="link.click(item, $event); $event.preventDefault();" innerHTML="{{link.html(item)}}"></a>
+        <li *ngFor="let link of links" 
+          [class.disabled]="link.enabled && !link.enabled(item)"
+          (click)="link.click(item, $event); $event.preventDefault();"
+          (mouseenter)="focus = links.indexOf(link)"
+          (mouseleave)="focus = -1">
+          <context-submenu *ngIf="link.actions" 
+            [links]="link.actions"
+            [parentFocus]="focus == links.indexOf(link)"
+            (onClick)="isShown = false"></context-submenu>
+          {{link.html(item)}}
         </li>
       </ul>
     </div>
   `,
+  styles: [`
+  ul {
+    padding: 0;
+    list-style-type: none;
+    display: block;
+    position: absolute;
+  }`,
+  `
+  li {
+    cursor: pointer;
+    display: list-item;
+  }
+  `],
+  directives: [ContextSubMenuComponent]
 })
 export class ContextMenuComponent {
   public links: any[] = [];
@@ -21,6 +42,8 @@ export class ContextMenuComponent {
   public isOpening: boolean = false;
   public item: any;
   private mouseLocation: { left: number, top: number } = { left: 0, top: 0 };
+  private focus: number;
+
   constructor(private _contextMenuService: ContextMenuService) {
     _contextMenuService.show.subscribe((e: IContextMenuClickEvent) => this.showMenu(e.event, e.actions, e.item));
   }
@@ -53,5 +76,9 @@ export class ContextMenuComponent {
       left: event.clientX,
       top: event.clientY,
     };
+  }
+
+  public mouseEnter() {
+    console.log(this.focus);
   }
 }
